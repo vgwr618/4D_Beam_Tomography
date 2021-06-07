@@ -7,8 +7,8 @@ for i = 1 : pixelDim(1)
                 pixCenterX = (resfactor * pixcal) * (j - (pixelDim(2) / 2) / resfactor);
                 pixCenterY = (resfactor * pixcal) * (-i + (pixelDim(1) / 2) / resfactor);
                 if fin4DCoord(1,k) < (pixCenterX + (resfactor * pixcal) / 2) && fin4DCoord(1,k) >= (pixCenterX - (resfactor * pixcal) / 2) && fin4DCoord(3,k)< pixCenterY + (resfactor * pixcal) / 2 && fin4DCoord(3,k)>= pixCenterY - (resfactor * pixcal) / 2
-                    init4DCoord(2, k) = 1e-4*rand;
-                    init4DCoord(4, k) = 1e-4*rand;
+                    init4DCoord(2, k) = 1e-4*rand-5e-5;
+                    init4DCoord(4, k) = 1e-4*rand-5e-5;
                 end 
             end
         end
