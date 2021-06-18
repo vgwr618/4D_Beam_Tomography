@@ -190,14 +190,3 @@ sum(final_image, 'all')
 matrixName = strcat('R2_1.1_-3.2_2.15.csv')
 writematrix(R, strcat(fileloc, matrixName))
 R_mat = readmatrix('C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\R2_1.1_-3.2_2.15.csv')
-
-%%
-A = [10,7];
-B = [20,13];
-C = [A;B]
-D = [0,0;
-    0,0];
-E = uint8(D-C+20);
-figure()
-imagesc(E)
-colorbar
