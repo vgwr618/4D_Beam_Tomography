@@ -3,8 +3,8 @@ close all
 
 %initial beam paramters
 qe=-1.6e-19;
-beamdiv=1e-5; %beam divergence approximately
-Spotsize=10e-4; %for gaussian dist
+beamdiv=1e-4; %beam divergence approximately
+Spotsize=1e-4; %for gaussian dist
 dG=1e-6; %energy spread rms control parameter.
 ztime=10e-12; %bunch length in seconds
 G=7;
@@ -13,15 +13,15 @@ numstd=0.25;
 npar=50000; %numbber of particles
 
 %Quad settings (currents) arbitrary for now%
-I3=1.1;
-I4=-3.2;
-I5=2.15;
+I3=-1.1;
+I4=2.2;
+I5=-3.5;
 I6=5*0;
 
 %what are the phase advances for arbitrary settings?
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%Run GPT%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-infile = 'Tomography_test.in';
+infile = 'Tomography_test2.in';
 gdffile = 'Tomography_test_solution.gdf';
 path_to_gpt='C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\General_Particle_Tracer\bin\'; %Must adapt this to your pc
 path_to_in_out_file=' C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\' ; %Must adapt this to your pc
@@ -45,7 +45,7 @@ y2ps=data(1).d.y;
 fileloc='C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\'
 resfactor=1;
 saveImage=1;
-pixcal=13.614e-6; % 13.614e-6 old calibration? not really sure where it came from.
+pixcal=27e-6; % 13.614e-6 old calibration? not really sure where it came from.
 if saveImage==1
      yag_Image_init = zeros(floor(800/resfactor),floor(800/resfactor));
      for l=1:length(x2ps)
@@ -55,23 +55,24 @@ if saveImage==1
              yag_Image_init(ypos,xpos)=yag_Image_init(ypos,xpos)+1;
          end
      end
-     
      %renormalize and smooth image
      maxIm=max(max(yag_Image_init));
      yag_Image_init=yag_Image_init.*floor(400/maxIm);
      radius=1; %pixels
      filter=fspecial('disk',radius);
      yag_Image_init=conv2(yag_Image_init,filter);
-     yag_Image_init = imresize(yag_Image_init,[800 800]);
+     yag_Image_init=imresize(yag_Image_init,[800 800]);
      yag_Image_init=uint8(yag_Image_init);
-     imageName = strcat('GPT_image_init2_1.1_-3.2_2.15','.bmp');
+     imageName = strcat('GPT_image_init_1.1_-3.2_2.15','.bmp');
      imwrite(yag_Image_init,strcat(fileloc,imageName));
 end
 init_gpt_image=imread('C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\GPT_image_init_1.1_-3.2_2.15.bmp');
-numpart = sum(init_gpt_image, 'all');
+init_gpt_image = uint8(100000/sum(init_gpt_image, 'all')*double(init_gpt_image));
+numpart = sum(init_gpt_image, 'all')
 figure()
 imagesc(init_gpt_image)
 colorbar
+
 
 %% Final Yag Screen
 u=zeros(2,length(data(end).d.x));
@@ -81,7 +82,7 @@ y2ps=data(end).d.y;
 fileloc='C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\'
 resfactor=1;
 saveImage=1;
-pixcal=13.614e-6; %old calibration? not really sure where it came from.
+pixcal=27e-6; %13.614e-6 old calibration? not really sure where it came from.
 if saveImage==1
      yag_Image = zeros(floor(800/resfactor),floor(800/resfactor));
      for l=1:length(x2ps)
@@ -100,20 +101,33 @@ if saveImage==1
      yag_Image=conv2(yag_Image,filter);
      yag_Image = imresize(yag_Image,[800 800]);
      yag_Image=uint8(yag_Image);
-     imageName = strcat('GPT_image_init2_1.1_-3.2_2.15','.bmp');
+     imageName = strcat('GPT_image_fin2_1.1_-3.2_2.15','.bmp');
      imwrite(yag_Image,strcat(fileloc,imageName));
 end
 
-final_gpt_image=imread('C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\GPT_image_init2_1.1_-3.2_2.15.bmp');
-final_gpt_image = 1/sum(final_gpt_image, 'all')*double(final_gpt_image);
+final_gpt_image=imread('C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\GPT_image_fin2_1.1_-3.2_2.15.bmp');
+% final_gpt_image = numpart/sum(final_gpt_image, 'all')*double(final_gpt_image);
 figure()
 imagesc(final_gpt_image)
 colorbar
 
 %% first iteration
-[init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat, posCoord, negCoord, sigmaRecon, stReconMeasXY] = first_propagation(init_gpt_image, final_gpt_image, R, numpart, 3e-20, pixcal, resfactor);
-sum(diffMat, 'all')
+[init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat, sigmaRecon, stReconMeasXY, newpart] = first_propagation(init_gpt_image, final_gpt_image, R, numpart, 1e-5, pixcal, resfactor);
+%%
+sum(sum(diffMat(diffMat > 0)))
+sum(sum(diffMat(diffMat < 0)))
+sum(diffMat,'all')
+%%
+figure()
+imagesc(finImDisp)
+colorbar
+figure()
+imagesc(diffMat)
+colorbar
+
 %% algorithm loop
+ConvHist = []
+%%
 for i = 1 : 5
     init4DCoord = backward_propagation(init4DCoordOld, fin4DCoord, diffMat, pixcal, resfactor);
     [init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat] = forward_propagation(init4DCoord, final_gpt_image, R, pixcal, resfactor);
@@ -123,7 +137,12 @@ for i = 1 : 5
     figure()
     imagesc(diffMat)
     colorbar
-    ConvHist = []
-    ConvHist(end+1) = sum(diffMat, 'all')
+    ConvHist(end+1) = sum(sum(diffMat(diffMat > 0)))
     i
 end
+%%
+partIndex = linspace(1,length(ConvHist),length(ConvHist));
+figure()
+scatter(partIndex,ConvHist,5,'filled')
+yheight = sum(finImDisp,'all');
+ylim([0 yheight])

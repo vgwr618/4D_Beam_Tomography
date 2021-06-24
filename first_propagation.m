@@ -1,4 +1,4 @@
-function [init4DCoord, fin4DCoord, finIm, finImDisp, diffMat, posCoord, negCoord, sigmaRecon, stReconMeasXY] = first_propagation(InitScreenIm, MeasuredIm, R, npar, sigma, pixcal, resfactor)
+function [init4DCoord, fin4DCoord, finIm, finImDisp, diffMat, sigmaRecon, stReconMeasXY, newpart] = first_propagation(InitScreenIm, MeasuredIm, R, npar, sigma, pixcal, resfactor)
 if sum(InitScreenIm, 'all') == npar
     initXCoord = [];
     initYCoord = [];
@@ -33,39 +33,41 @@ if sum(InitScreenIm, 'all') == npar
             finIm(ypos,xpos) = finIm(ypos,xpos) + 1;
         end
     end
+    newpart =  sum(finIm,'all');
     radius = 1; %pixels
     filter = fspecial('disk', radius);
     finImDisp = conv2(finIm,filter);
     finImDisp = imresize(finImDisp,[800 800]);
     finImDisp = uint8(finImDisp);
-    sum(finImDisp, 'all')
-    sum(finIm, 'all')
-    finImDisp = (1/sum(finImDisp, 'all')) * double(finImDisp);
-    diffMat =  finImDisp - double(MeasuredIm);
-    posX = [];
-    posY = [];
-    negX = [];
-    negY = [];
-    for i = 1:pixelDim(1)
-        for j = 1:pixelDim(2)
-            if diffMat(i,j) < 0
-                for k = 1:abs(diffMat(i,j) * npar)
-                    negX(end+1) = (resfactor * pixcal) * (j - (pixelDim(2) / 2) / resfactor);
-                    negY(end+1) = (resfactor * pixcal) * (-i + (pixelDim(1) / 2) / resfactor);
-                end
-            elseif diffMat(i,j) > 0
-                for k = 1:abs(diffMat(i,j) * npar)
-                    posX(end+1) = (resfactor * pixcal) * (j - (pixelDim(2) / 2) / resfactor);
-                    posY(end+1) = (resfactor * pixcal) * (-i + (pixelDim(1) / 2) / resfactor);
-                end
-            end
-        end
-    end
-    posCoord = [posX; 
-                posY];
-    negCoord = [negX; 
-                negY];
-            
+%     sum(finImDisp, 'all')
+%     sum(finIm, 'all')
+    finImDisp = (newpart/sum(finImDisp, 'all')) * double(finImDisp);
+    MeasuredIm = (newpart/sum(MeasuredIm, 'all')) * double(MeasuredIm);
+    diffMat =  finImDisp - MeasuredIm;
+%     posX = [];
+%     posY = [];
+%     negX = [];
+%     negY = [];
+%     for i = 1:pixelDim(1)
+%         for j = 1:pixelDim(2)
+%             if diffMat(i,j) < 0
+%                 for k = 1:abs(diffMat(i,j) * npar)
+%                     negX(end+1) = (resfactor * pixcal) * (j - (pixelDim(2) / 2) / resfactor);
+%                     negY(end+1) = (resfactor * pixcal) * (-i + (pixelDim(1) / 2) / resfactor);
+%                 end
+%             elseif diffMat(i,j) > 0
+%                 for k = 1:abs(diffMat(i,j) * npar)
+%                     posX(end+1) = (resfactor * pixcal) * (j - (pixelDim(2) / 2) / resfactor);
+%                     posY(end+1) = (resfactor * pixcal) * (-i + (pixelDim(1) / 2) / resfactor);
+%                 end
+%             end
+%         end
+%     end
+%     posCoord = [posX; 
+%                 posY];
+%     negCoord = [negX; 
+%                 negY];
+%             
     measXCoord = [];
     measYCoord = [];
     for i = 1 : pixelDim(1)
