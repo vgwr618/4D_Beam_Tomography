@@ -1,5 +1,8 @@
 function [init4DCoord, fin4DCoord, finIm, finImDisp, diffMat] = forward_propagation(init4DCoord, MeasuredIm, R, pixcal, resfactor)
 pixelDim = size(MeasuredIm);
+
+%propagate the new initial 4D coordinates the same way first_propagation
+%did
 fin4DCoord = R * init4DCoord;
 finXCoord = fin4DCoord(1,:);
 finYCoord = fin4DCoord(3,:);

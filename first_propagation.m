@@ -3,6 +3,9 @@ if sum(InitScreenIm, 'all') == npar
     initXCoord = [];
     initYCoord = [];
     pixelDim = size(InitScreenIm);
+    %Iterate through the matrix coordinates and convert particle in (i,j)
+    %to GPT coordinates, particle coordinate is randomized within each
+    %pixel
     for i = 1 : pixelDim(1)
         for j = 1 : pixelDim(2)
             if InitScreenIm(i,j) > 0
@@ -14,17 +17,22 @@ if sum(InitScreenIm, 'all') == npar
         end
     end
     
+    %initialize momentum as gaussians with chosen guess sigma
     initPxCoord = normrnd(0, sigma, [1, length(initXCoord)]);
     initPyCoord = normrnd(0, sigma, [1, length(initXCoord)]);
     init4DCoord = [initXCoord;
                    initPxCoord;
                    initYCoord;
                    initPyCoord];
+               
+    %send initial coordinate to final coordinate with transport matrix
     fin4DCoord = R * init4DCoord;
     finXCoord = fin4DCoord(1,:);
     finPxCoord = fin4DCoord(2,:);
     finYCoord = fin4DCoord(3,:);
     finPyCoord = fin4DCoord(4,:);
+    
+    %map final coordinates to pixels
     finIm = zeros(floor(pixelDim(1)/resfactor), floor(pixelDim(2)/resfactor));
     for i = 1:length(finXCoord)
         xpos = floor(finXCoord(i) / (resfactor * pixcal) + (pixelDim(2) / 2) / resfactor);
@@ -41,9 +49,14 @@ if sum(InitScreenIm, 'all') == npar
     finImDisp = uint8(finImDisp);
 %     sum(finImDisp, 'all')
 %     sum(finIm, 'all')
+
+    % normalize final image and gpt image so that they both have the same
+    % number of particles, which is the number of particles in the final
+    % simulated pixel image
     finImDisp = (newpart/sum(finImDisp, 'all')) * double(finImDisp);
     MeasuredIm = (newpart/sum(MeasuredIm, 'all')) * double(MeasuredIm);
     diffMat =  finIm - MeasuredIm;
+    
 %     diffMat =  finImDisp - finIm;
 %     posX = [];
 %     posY = [];

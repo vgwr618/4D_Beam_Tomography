@@ -179,11 +179,11 @@ set(gca,'FontSize',15)
 %% first iteration
 guess_sigma = 1e-4;
 [init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat, sigmaRecon, stReconMeasXY, newpart] = first_propagation(init_gpt_image, final_gpt_image, R, numpart, guess_sigma, pixcal, resfactor);
-%%
+%% check difference matrix's total positive intensity difference and negative intensity difference
 sum(sum(diffMat(diffMat > 0)))
 sum(sum(diffMat(diffMat < 0)))
 sum(diffMat,'all')
-%%
+%% plot first iteration final image and difference image
 figure()
 imagesc(finImDisp)
 colorbar
@@ -191,9 +191,9 @@ figure()
 imagesc(diffMat)
 colorbar
 
-%% algorithm loop
+%% initialize convergence history
 ConvHist = [sum(sum(diffMat(diffMat > 0)))]
-%%
+%% algorithm loop
 for i = 1 : 5
     init4DCoord = backward_propagation(init4DCoordOld, fin4DCoord, diffMat, pixcal, resfactor, guess_sigma);
     [init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat] = forward_propagation(init4DCoord, final_gpt_image, R, pixcal, resfactor);
@@ -208,7 +208,7 @@ for i = 1 : 5
     ConvHist(end+1) = sum(sum(diffMat(diffMat > 0)))
     i
 end
-%%
+%% plot convergence history on the scale of 0 to max possible error
 partIndex = linspace(1,length(ConvHist),length(ConvHist));
 figure()
 scatter(partIndex,ConvHist,5,'filled')
