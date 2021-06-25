@@ -8,7 +8,7 @@ if sum(InitScreenIm, 'all') == npar
             if InitScreenIm(i,j) > 0
                 for k = 1 : InitScreenIm(i,j)
                     initXCoord(end+1) = pixcal * rand + (resfactor * pixcal) * (j - (pixelDim(2) / 2) / resfactor) - pixcal;
-                    initYCoord(end+1) = pixcal * rand + (resfactor * pixcal) * (-i + (pixelDim(1) / 2) / resfactor) - pixcal;
+                    initYCoord(end+1) = pixcal * rand + (resfactor * pixcal) * (-i + (pixelDim(1) / 2) / resfactor);
                 end
             end
         end
@@ -29,7 +29,7 @@ if sum(InitScreenIm, 'all') == npar
     for i = 1:length(finXCoord)
         xpos = floor(finXCoord(i) / (resfactor * pixcal) + (pixelDim(2) / 2) / resfactor);
         ypos = floor(-finYCoord(i) / (resfactor * pixcal) + (pixelDim(1) / 2) / resfactor);
-        if xpos > 0 && xpos <= 800 / resfactor && ypos > 0 && ypos <= 800 / resfactor
+        if xpos >= 0 && xpos < 800 / resfactor && ypos >= 0 && ypos < 800 / resfactor
             finIm(ypos,xpos) = finIm(ypos,xpos) + 1;
         end
     end
@@ -43,7 +43,8 @@ if sum(InitScreenIm, 'all') == npar
 %     sum(finIm, 'all')
     finImDisp = (newpart/sum(finImDisp, 'all')) * double(finImDisp);
     MeasuredIm = (newpart/sum(MeasuredIm, 'all')) * double(MeasuredIm);
-    diffMat =  finImDisp - MeasuredIm;
+    diffMat =  finIm - MeasuredIm;
+%     diffMat =  finImDisp - finIm;
 %     posX = [];
 %     posY = [];
 %     negX = [];

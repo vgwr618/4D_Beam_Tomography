@@ -13,7 +13,7 @@ numstd=0.25;
 npar=50000; %numbber of particles
 
 %Quad settings (currents) arbitrary for now%
-I3=-1.1;
+I3=-0.5;
 I4=2.2;
 I5=-3.5;
 I6=5*0;
@@ -51,7 +51,7 @@ if saveImage==1
      for l=1:length(x2ps)
          xpos=floor(x2ps(l)/(resfactor*pixcal)+400/resfactor);
          ypos=floor(-y2ps(l)/(resfactor*pixcal)+400/resfactor);
-         if xpos>0 && xpos<=800/resfactor && ypos>0 && ypos<=800/resfactor
+         if xpos>=0 && xpos<800/resfactor && ypos>=0 && ypos<800/resfactor
              yag_Image_init(ypos,xpos)=yag_Image_init(ypos,xpos)+1;
          end
      end
@@ -88,7 +88,7 @@ if saveImage==1
      for l=1:length(x2ps)
          xpos=floor(x2ps(l)/(resfactor*pixcal)+400/resfactor);
          ypos=floor(-y2ps(l)/(resfactor*pixcal)+400/resfactor);
-         if xpos>0 && xpos<=800/resfactor && ypos>0 && ypos<=800/resfactor
+         if xpos>=0 && xpos<800/resfactor && ypos>=0 && ypos<800/resfactor
              yag_Image(ypos,xpos)=yag_Image(ypos,xpos)+1;
          end
      end
@@ -111,8 +111,74 @@ figure()
 imagesc(final_gpt_image)
 colorbar
 
+%% R Matrix
+%%%WARNING, RUN THIS AFTER YOU HAVE RUN Tomgraphy_testfun%%%%
+screen=1;
+% quads=[1.1,-3.2,2.15];%quad currents
+quads=[-I3,-I4,-I5];
+G=7; %gamma factor
+gammaBeta=sqrt(G^2-1); %gamma times beta
+L=2; %distance from 3rd quad center to final screen.
+position=0; %initial screen position
+
+
+%%%triplet_focusing_example is the matrix propagator%%%%
+[ R , R_all, z_all ,pos] = triplet_focusing_example(quads,gammaBeta,L,position);
+
+%% compare GPT to the matrix code
+%%% need to pull data from GPT simulation to construct the initial sigma
+%%% matrix.
+x=data(screen).d.x;
+xp=data(screen).d.Bx;
+y=data(screen).d.y;
+yp=data(screen).d.By;
+phsp=zeros(length(x),4);
+phsp(:,1)=x;
+phsp(:,2)=xp;
+phsp(:,3)=y;
+phsp(:,4)=yp;
+sigma0=cov(phsp);
+
+
+%Initialize arrays to append C and S matrix elements at each z
+Cpointsx=zeros(1,length(R_all));
+Spointsx=zeros(1,length(R_all));
+Cpointsy=zeros(1,length(R_all));
+Spointsy=zeros(1,length(R_all));
+%Initialize arrays to append Spotsizes at each z
+stdx=zeros(1,length(R_all));
+stdxp=zeros(1,length(R_all));
+stdy=zeros(1,length(R_all));
+stdyp=zeros(1,length(R_all));
+
+
+for j=1:length(Spointsx)
+Cpointsx(j)=R_all(1,1,j);
+Spointsx(j)=R_all(1,2,j);
+Cpointsy(j)=R_all(3,3,j);
+Spointsy(j)=R_all(3,4,j);
+S_aux = R_all(:,:,j)*sigma0*R_all(:,:,j)';
+stdx(j) = sqrt(S_aux(1,1));
+stdxp(j) = sqrt(S_aux(1,2));
+stdy(j) = sqrt(S_aux(3,3));
+stdyp(j) = sqrt(S_aux(3,4));
+end
+
+figure
+plot(z_all,stdx,'LineWidth',2)
+hold on
+plot(z_all,stdy,'LineWidth',2)
+hold on
+plot(stats.d.position(2:end),stats.d.stdx(2:end),'--','LineWidth',2)
+hold on
+plot(stats.d.position(2:end),stats.d.stdy(2:end),'--','LineWidth',2)
+legend('\sigma_x(z)','\sigma_y(z)','\sigma_x(z) (GPT)','\sigma_y(z) (GPT)','Location','best')
+xlabel('z(m)')
+set(gca,'FontSize',15)
+
 %% first iteration
-[init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat, sigmaRecon, stReconMeasXY, newpart] = first_propagation(init_gpt_image, final_gpt_image, R, numpart, 1e-5, pixcal, resfactor);
+guess_sigma = 1e-4;
+[init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat, sigmaRecon, stReconMeasXY, newpart] = first_propagation(init_gpt_image, final_gpt_image, R, numpart, guess_sigma, pixcal, resfactor);
 %%
 sum(sum(diffMat(diffMat > 0)))
 sum(sum(diffMat(diffMat < 0)))
@@ -126,17 +192,19 @@ imagesc(diffMat)
 colorbar
 
 %% algorithm loop
-ConvHist = []
+ConvHist = [sum(sum(diffMat(diffMat > 0)))]
 %%
 for i = 1 : 5
-    init4DCoord = backward_propagation(init4DCoordOld, fin4DCoord, diffMat, pixcal, resfactor);
+    init4DCoord = backward_propagation(init4DCoordOld, fin4DCoord, diffMat, pixcal, resfactor, guess_sigma);
     [init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat] = forward_propagation(init4DCoord, final_gpt_image, R, pixcal, resfactor);
-    figure()
-    imagesc(finImDisp)
-    colorbar
-    figure()
-    imagesc(diffMat)
-    colorbar
+%     figure()
+%     imagesc(finImDisp)
+%     colorbar
+%     figure()
+%     imagesc(diffMat)
+%     colorbar
+    figure
+    scatter(init4DCoord(2,:),init4DCoord(4,:),0.1)
     ConvHist(end+1) = sum(sum(diffMat(diffMat > 0)))
     i
 end

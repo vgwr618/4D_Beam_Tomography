@@ -7,7 +7,7 @@ finIm = zeros(floor(pixelDim(1)/resfactor), floor(pixelDim(2)/resfactor));
 for i = 1:length(finXCoord)
     xpos = floor(finXCoord(i) / (resfactor * pixcal) + (pixelDim(2) / 2) / resfactor);
     ypos = floor(-finYCoord(i) / (resfactor * pixcal) + (pixelDim(1) / 2) / resfactor);
-    if xpos > 0 && xpos <= 800 / resfactor && ypos > 0 && ypos <= 800 / resfactor
+    if xpos >= 0 && xpos < 800 / resfactor && ypos >= 0 && ypos < 800 / resfactor
         finIm(ypos,xpos) = finIm(ypos,xpos) + 1;
     end
 end
@@ -21,4 +21,4 @@ finImDisp = uint8(finImDisp);
 % sum(finIm, 'all')
 finImDisp = (newpart/sum(finImDisp, 'all')) * double(finImDisp);
 MeasuredIm = (newpart/sum(MeasuredIm, 'all')) * double(MeasuredIm);
-diffMat =  finImDisp - MeasuredIm;
+diffMat =  finIm - MeasuredIm;
