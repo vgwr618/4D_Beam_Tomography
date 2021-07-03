@@ -10,11 +10,11 @@ for i = 1 : pixelDim(1)
         if diffMat(i,j) > 0
             index_list = [];
             %right and bottom boundary lines for each pixel
-            pixRightX = pixcal * ((resfactor * j) - (pixelDim(2) / 2));
-            pixBotY = pixcal * ((resfactor * -i) + (pixelDim(1) / 2));
+            pixLeftX = pixcal * ((resfactor * j) - (pixelDim(2) / 2));
+            pixTopY = pixcal * ((resfactor * -i) + (pixelDim(1) / 2));
             %check for final simulated particles that are in each pixel box
             for k = 1:length(fin4DCoord(1,:))
-                if fin4DCoord(1,k) < pixRightX && fin4DCoord(1,k) >= pixRightX - resfactor * pixcal && fin4DCoord(3,k) > pixBotY && fin4DCoord(3,k)<= pixBotY + resfactor * pixcal
+                if fin4DCoord(1,k) >= pixLeftX && fin4DCoord(1,k) < pixLeftX + resfactor * pixcal && fin4DCoord(3,k) <= pixTopY && fin4DCoord(3,k) > pixTopY - resfactor * pixcal
                     index_list(end+1) = k;
                 end
             end
@@ -45,8 +45,8 @@ for i = 1 : pixelDim(1)
 %                     fin4DCoord(3,n)
 %                     pixLeftX
 %                     pixTopY
-                    init4DCoord(2, n) = normrnd(0, sigma);
-                    init4DCoord(4, n) = normrnd(0, sigma);
+                    init4DCoord(2, n) = -3 * sigma + rand(1,1)* 6 * sigma;
+                    init4DCoord(4, n) = -3 * sigma + rand(1,1)* 6 * sigma;
                 end
             end
         end

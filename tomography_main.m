@@ -1,10 +1,10 @@
 clear all
 close all
-
+%%
 %initial beam paramters
 qe=-1.6e-19;
-beamdiv=1e-4; %beam divergence approximately
-Spotsize=1e-4; %for gaussian dist
+beamdiv=1e-5; %beam divergence approximately
+Spotsize=2e-4; %for gaussian dist
 dG=1e-6; %energy spread rms control parameter.
 ztime=10e-12; %bunch length in seconds
 G=7;
@@ -13,9 +13,9 @@ numstd=0.25;
 npar=50000; %numbber of particles
 
 %Quad settings (currents) arbitrary for now%
-I3=-0.5;
-I4=2.2;
-I5=-3.5;
+I3=-1.8;
+I4=4.0;
+I5=-2.8;
 I6=5*0;
 
 %what are the phase advances for arbitrary settings?
@@ -51,14 +51,14 @@ if saveImage==1
      for l=1:length(x2ps)
          xpos=floor(x2ps(l)/(resfactor*pixcal)+400/resfactor);
          ypos=floor(-y2ps(l)/(resfactor*pixcal)+400/resfactor);
-         if xpos>=0 && xpos<800/resfactor && ypos>=0 && ypos<800/resfactor
+         if xpos>0 && xpos<=800/resfactor && ypos>0 && ypos<=800/resfactor
              yag_Image_init(ypos,xpos)=yag_Image_init(ypos,xpos)+1;
          end
      end
      %renormalize and smooth image
      maxIm=max(max(yag_Image_init));
      yag_Image_init=yag_Image_init.*floor(400/maxIm);
-     radius=1; %pixels
+     radius=3; %pixels
      filter=fspecial('disk',radius);
      yag_Image_init=conv2(yag_Image_init,filter);
      yag_Image_init=imresize(yag_Image_init,[800 800]);
@@ -78,7 +78,6 @@ colorbar
 u=zeros(2,length(data(end).d.x));
 x2ps=data(end).d.x;
 y2ps=data(end).d.y;
-
 fileloc='C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\'
 resfactor=1;
 saveImage=1;
@@ -88,7 +87,7 @@ if saveImage==1
      for l=1:length(x2ps)
          xpos=floor(x2ps(l)/(resfactor*pixcal)+400/resfactor);
          ypos=floor(-y2ps(l)/(resfactor*pixcal)+400/resfactor);
-         if xpos>=0 && xpos<800/resfactor && ypos>=0 && ypos<800/resfactor
+         if xpos>0 && xpos<=800/resfactor && ypos>0 && ypos<=800/resfactor
              yag_Image(ypos,xpos)=yag_Image(ypos,xpos)+1;
          end
      end
@@ -96,7 +95,7 @@ if saveImage==1
      %renormalize and smooth image
      maxIm=max(max(yag_Image));
      yag_Image=yag_Image.*floor(400/maxIm);
-     radius=1; %pixels
+     radius=3; %pixels
      filter=fspecial('disk',radius);
      yag_Image=conv2(yag_Image,filter);
      yag_Image = imresize(yag_Image,[800 800]);
@@ -106,8 +105,8 @@ if saveImage==1
 end
 
 final_gpt_image=imread('C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\GPT_image_fin2_1.1_-3.2_2.15.bmp');
-% final_gpt_image = numpart/sum(final_gpt_image, 'all')*double(final_gpt_image);
-figure()
+final_gpt_image = numpart/sum(final_gpt_image, 'all')*double(final_gpt_image);
+figure
 imagesc(final_gpt_image)
 colorbar
 
@@ -179,38 +178,72 @@ set(gca,'FontSize',15)
 %% first iteration
 guess_sigma = 1e-4;
 [init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat, sigmaRecon, stReconMeasXY, newpart] = first_propagation(init_gpt_image, final_gpt_image, R, numpart, guess_sigma, pixcal, resfactor);
+%% first iteration for other current settings
+[init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat] = forward_propagation(init4DCoord, final_gpt_image, R, pixcal, resfactor);
 %% check difference matrix's total positive intensity difference and negative intensity difference
 sum(sum(diffMat(diffMat > 0)))
 sum(sum(diffMat(diffMat < 0)))
 sum(diffMat,'all')
-%% plot first iteration final image and difference image
+%% plot 1st iteration image, difference image, and momentum space dist
 figure()
 imagesc(finImDisp)
 colorbar
 figure()
 imagesc(diffMat)
 colorbar
-
+figure
+scatter(init4DCoordOld(2,:),init4DCoordOld(4,:),0.1)
+xlabel('X momentum')
+ylabel('Y momentum')
 %% initialize convergence history
 ConvHist = [sum(sum(diffMat(diffMat > 0)))]
 %% algorithm loop
-for i = 1 : 5
+for i = 1 : 100
     init4DCoord = backward_propagation(init4DCoordOld, fin4DCoord, diffMat, pixcal, resfactor, guess_sigma);
     [init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat] = forward_propagation(init4DCoord, final_gpt_image, R, pixcal, resfactor);
 %     figure()
 %     imagesc(finImDisp)
 %     colorbar
-%     figure()
+%     figure()\
 %     imagesc(diffMat)
 %     colorbar
-    figure
-    scatter(init4DCoord(2,:),init4DCoord(4,:),0.1)
+%     figure
+%     scatter(init4DCoord(2,:),init4DCoord(4,:),0.1)
     ConvHist(end+1) = sum(sum(diffMat(diffMat > 0)))
+    if length(ConvHist) > 2
+        if ConvHist(i+1) == ConvHist(i) && ConvHist(i) == ConvHist(i-1)
+            break
+        end
+    end
     i
 end
 %% plot convergence history on the scale of 0 to max possible error
 partIndex = linspace(1,length(ConvHist),length(ConvHist));
 figure()
 scatter(partIndex,ConvHist,5,'filled')
+xlabel('# of Iterations')
+ylabel('Sum of positive intensity of difference image')
 yheight = sum(finImDisp,'all');
+xlim([0 max(partIndex)+1])
 ylim([0 yheight])
+figure()
+scatter(partIndex,ConvHist,5,'filled')
+xlim([0 max(partIndex)+1])
+xlabel('# of Iterations')
+ylabel('Sum of positive intensity of difference image')
+%% plot final image, difference image, and momentum space dist
+figure()
+imagesc(finImDisp)
+colorbar
+figure()
+imagesc(diffMat)
+colorbar
+figure
+scatter(init4DCoordOld(2,:),init4DCoordOld(4,:),0.1)
+xlabel('X momentum')
+ylabel('Y momentum')
+%% initial momentum space
+figure
+scatter(init4DCoord(2,:),init4DCoord(4,:),0.1)
+xlabel('X momentum')
+ylabel('Y momentum')
