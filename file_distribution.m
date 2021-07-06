@@ -1,5 +1,5 @@
 %% momentum double gaussian
-sd = 3e-5;
+sd = 1e-4;
 mu1 = -2*sd;
 x1 = linspace(-4*sd,0,1000);
 Px1 = 1/(2*pi*sd)*exp(-(x1-mu1).^2/(2*sd^2));

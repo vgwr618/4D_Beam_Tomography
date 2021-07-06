@@ -13,9 +13,9 @@ numstd=0.25;
 npar=50000; %numbber of particles
 
 %Quad settings (currents) arbitrary for now%
-I3=-1.8;
-I4=4.0;
-I5=-2.8;
+I3=-1.5;
+I4=2.0;
+I5=-0.5;
 I6=5*0;
 
 %what are the phase advances for arbitrary settings?
@@ -42,7 +42,7 @@ u=zeros(2,length(data(1).d.x));
 x2ps=data(1).d.x;
 y2ps=data(1).d.y;
 
-fileloc='C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\'
+fileloc='C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\GPT_Images\'
 resfactor=1;
 saveImage=1;
 pixcal=27e-6; % 13.614e-6 old calibration? not really sure where it came from.
@@ -63,10 +63,10 @@ if saveImage==1
      yag_Image_init=conv2(yag_Image_init,filter);
      yag_Image_init=imresize(yag_Image_init,[800 800]);
      yag_Image_init=uint8(yag_Image_init);
-     imageName = strcat('GPT_image_init_1.1_-3.2_2.15','.bmp');
+     imageName = strcat('GPT_image_init_-1.5_2.0_-1.5','.bmp');
      imwrite(yag_Image_init,strcat(fileloc,imageName));
 end
-init_gpt_image=imread('C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\GPT_image_init_1.1_-3.2_2.15.bmp');
+init_gpt_image=imread('C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\GPT_Images\GPT_image_init_-1.5_2.0_-1.5.bmp');
 init_gpt_image = uint8(100000/sum(init_gpt_image, 'all')*double(init_gpt_image));
 numpart = sum(init_gpt_image, 'all')
 figure()
@@ -78,7 +78,7 @@ colorbar
 u=zeros(2,length(data(end).d.x));
 x2ps=data(end).d.x;
 y2ps=data(end).d.y;
-fileloc='C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\'
+fileloc='C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\GPT_Images\'
 resfactor=1;
 saveImage=1;
 pixcal=27e-6; %13.614e-6 old calibration? not really sure where it came from.
@@ -100,11 +100,11 @@ if saveImage==1
      yag_Image=conv2(yag_Image,filter);
      yag_Image = imresize(yag_Image,[800 800]);
      yag_Image=uint8(yag_Image);
-     imageName = strcat('GPT_image_fin2_1.1_-3.2_2.15','.bmp');
+     imageName = strcat('GPT_image_fin_-1.5_2.0_-0.5','.bmp');
      imwrite(yag_Image,strcat(fileloc,imageName));
 end
 
-final_gpt_image=imread('C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\Test_Images\GPT_image_fin2_1.1_-3.2_2.15.bmp');
+final_gpt_image=imread('C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\GPT_Images\GPT_image_fin_-1.5_2.0_-0.5.bmp');
 final_gpt_image = numpart/sum(final_gpt_image, 'all')*double(final_gpt_image);
 figure
 imagesc(final_gpt_image)
@@ -123,7 +123,9 @@ position=0; %initial screen position
 
 %%%triplet_focusing_example is the matrix propagator%%%%
 [ R , R_all, z_all ,pos] = triplet_focusing_example(quads,gammaBeta,L,position);
-
+matrixName = strcat('R_-1.5_2.0_-0.5.csv');
+writematrix(R, strcat(fileloc, matrixName))
+R = readmatrix('C:\Users\vgwr6\Desktop\UCLA\soph\Musumeci_Lab\GPT\GPT_Images\R_-1.5_2.0_-0.5.csv');
 %% compare GPT to the matrix code
 %%% need to pull data from GPT simulation to construct the initial sigma
 %%% matrix.
@@ -199,7 +201,7 @@ ylabel('Y momentum')
 ConvHist = [sum(sum(diffMat(diffMat > 0)))]
 %% algorithm loop
 for i = 1 : 100
-    init4DCoord = backward_propagation(init4DCoordOld, fin4DCoord, diffMat, pixcal, resfactor, guess_sigma);
+    init4DCoord = backward_propagation(init4DCoordOld, fin4DCoord, diffMat, pixcal, resfactor, guess_sigma, R);
     [init4DCoordOld, fin4DCoord, finIm, finImDisp, diffMat] = forward_propagation(init4DCoord, final_gpt_image, R, pixcal, resfactor);
 %     figure()
 %     imagesc(finImDisp)
@@ -211,7 +213,7 @@ for i = 1 : 100
 %     scatter(init4DCoord(2,:),init4DCoord(4,:),0.1)
     ConvHist(end+1) = sum(sum(diffMat(diffMat > 0)))
     if length(ConvHist) > 2
-        if ConvHist(i+1) == ConvHist(i) && ConvHist(i) == ConvHist(i-1)
+        if ConvHist(i+1) == ConvHist(i)
             break
         end
     end
@@ -227,6 +229,7 @@ yheight = sum(finImDisp,'all');
 xlim([0 max(partIndex)+1])
 ylim([0 yheight])
 figure()
+
 scatter(partIndex,ConvHist,5,'filled')
 xlim([0 max(partIndex)+1])
 xlabel('# of Iterations')
