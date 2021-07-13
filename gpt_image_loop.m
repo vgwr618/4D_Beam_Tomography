@@ -1,6 +1,6 @@
-for i = 1:0.2:3.6
-    for j = 1:0.2:3.6
-        for k = 1:0.2:3.6
+for i = 1.0:0.4:3.4
+    for j = 1.0:0.4:3.4
+        for k = 1.0:0.4:3.4
             qe=-1.6e-19;
             beamdiv=1e-5; %beam divergence approximately
             Spotsize=2e-4; %for gaussian dist
@@ -10,9 +10,9 @@ for i = 1:0.2:3.6
             Qbeam=2e+6*qe*0;
             numstd=0.25;
             npar=50000;
-            I3 = i;
-            I4 = -j;
-            I5 = k;
+            I3 = -i;
+            I4 = j;
+            I5 = -k;
             I6 = 0;
 
             infile = 'Tomography_test2.in';
@@ -33,7 +33,7 @@ for i = 1:0.2:3.6
 
             x2ps=data(end).d.x;
             y2ps=data(end).d.y;
-            fileloc='D:\PBPL\tomography_gpt_images\';
+            fileloc='D:\PBPL\gpt_images_0.4_increment\';
             resfactor=1;
             saveImage=1;
             pixcal=27e-6; %13.614e-6 old calibration? not really sure where it came from.
